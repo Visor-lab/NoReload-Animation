@@ -1,0 +1,73 @@
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local baseSpeed = 16
+local airSpeed = 200
+local active = false
+local function getHumanoid()
+local char = player.Character or player.CharacterAdded:Wait()
+return char:WaitForChild("Humanoid")
+end
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Parent = player:WaitForChild("PlayerGui")
+gui.ResetOnSpawn = false
+local button = Instance.new("TextButton")
+button.Parent = gui
+button.Size = UDim2.new(0, 140, 0, 55)
+button.Position = UDim2.new(0.4, 0, 0.7, 0)
+button.Text = "OFF | yad"
+button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+button.MouseButton1Click:Connect(function()
+active = not active
+if active then
+button.Text = "ON | yad"
+button.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+else
+button.Text = "OFF | yad"
+button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+getHumanoid().WalkSpeed = baseSpeed
+end
+end)
+-- drag
+local dragging, startPos, startInput
+button.InputBegan:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+dragging = true
+startInput = input.Position
+startPos = button.Position
+end
+end)
+button.InputChanged:Connect(function(input)
+if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
+local delta = input.Position - startInput
+button.Position = UDim2.new(
+startPos.X.Scale,
+startPos.X.Offset + delta.X,
+startPos.Y.Scale,
+startPos.Y.Offset + delta.Y
+)
+end
+end)
+button.InputEnded:Connect(function()
+dragging = false
+end)
+-- boost mientras estás en el aire
+local function setupCharacter(char)
+local hum = char:WaitForChild("Humanoid")
+hum.StateChanged:Connect(function(_, newState)
+if not active then return end
+if newState == Enum.HumanoidStateType.Freefall
+or newState == Enum.HumanoidStateType.Jumping then
+hum.WalkSpeed = airSpeed
+else
+hum.WalkSpeed = baseSpeed
+end
+end)
+end
+player.CharacterAdded:Connect(function(char)
+task.wait(0.5)
+setupCharacter(char)
+end)
+if player.Character then
+setupCharacter(player.Character)
+end
